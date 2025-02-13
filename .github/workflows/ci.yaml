@@ -86,7 +86,3 @@ jobs:
             git commit -m "Update image tag in ${{ env.VALUES_FILE }}"
             git push origin main
           fi
-
-      - name: Sync ArgoCD Application
-        run: |
-          argocd app sync metanet-msa-migration-be-java-helm --grpc-web
