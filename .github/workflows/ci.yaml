@@ -12,7 +12,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Application Repository
+      - name: Checkout Application Repository (metanet-msa-migration-be-java)
         uses: actions/checkout@v3
 
       - name: Set up QEMU
@@ -59,14 +59,15 @@ jobs:
           BASE_DIR="argo-metanet-msa-migration-be-java-helm"
           echo "BASE_DIR=$BASE_DIR" >> $GITHUB_ENV
 
-          # 브랜치별 values 파일 설정
-          echo "VALUES_FILE=$BASE_DIR/values-${{ github.ref_name }}.yaml" >> $GITHUB_ENV
-          echo "VALUE_FILE_NAME=values-${{ github.ref_name }}.yaml" >> $GITHUB_ENV
+          BRANCH=$(echo "${{ github.ref }}" | sed 's|refs/heads/||')
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
-          # applicationset.yaml 경로 고정
-          echo "APP_SET_FILE=$BASE_DIR/applicationset.yaml" >> $GITHUB_ENV
+          VALUES_FILE="$BASE_DIR/values-$BRANCH.yaml"
+          echo "VALUES_FILE=$VALUES_FILE" >> $GITHUB_ENV
+          
+          echo "Updating values file for branch: $BRANCH"
 
-      - name: Update Image in Values File
+      - name: Update Image in values-{branch}.yaml
         run: |
           echo "Updating image tag in ${{ env.VALUES_FILE }}"
           sed -i "s|tag: \".*\"|tag: \"${{ env.TAG }}\"|" "${{ env.VALUES_FILE }}"
@@ -86,10 +87,6 @@ jobs:
             git push origin main
           fi
 
-      - name: Apply ArgoCD ApplicationSet
-        run: |
-          kubectl apply -f argo-metanet-msa-migration-be-java-helm/applicationset.yaml
-
       - name: Sync ArgoCD Application
         run: |
-          argocd app sync metanet-msa-migration-be-java-${{ github.ref_name }} --grpc-web
+          argocd app sync metanet-msa-migration-be-java-helm --grpc-web
